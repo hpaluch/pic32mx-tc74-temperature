@@ -1,0 +1,10 @@
+*~
+*.swp
+*.bmp
+# MPLAB X IDE
+build/
+dist/
+**/nbproject/private/ 
+*.mk
+*.properties
+.generated_files/

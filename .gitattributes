@@ -1,0 +1,14 @@
+# .gitattributes
+
+# always use Unix LF
+.gitignore eol=lf
+.gitattributes eol=lf
+Makefile text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.mc3 text eol=lf
+*.yml text eol=lf
+
+# binary - do not touch
+*.PNG binary
+*.sch binary
