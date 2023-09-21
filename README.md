@@ -7,6 +7,26 @@ practice.
 
 Status: Just started
 
+# What is finished
+
+* Using FRC = 8Mhz, with FRCPLL scaled to PBCLK = 48 MHz
+* MCC Harmony components:
+  * [Harmony Core Library][Harmony Core Library]
+  * [System Timer Service][System Timer Service]
+    using tickless Core Timer (Core Timer
+    is MIPS CPU feature). Tickless means that there is no fixed
+    interrupt rate as time base, but `SYS_TIME` schedules
+    one shot Timer as needed by consuming clients.
+* Peripherals CORE Timer
+* `RA0_LED` is blinking at 1s rate (500ms interrupt rate) using
+  `SYS_TIME` Service
+
+# Planned features:
+
+Use https://microchip-mplab-harmony.github.io/core/GUID-8916AA7D-64C7-4477-8D26-664F6B3C242A.html I2C Driver libray to
+control TC74 Temperature sensors.
+
+
 # Required Hardware
 
 * [Microstick II][PIC Microstick II] board
@@ -43,6 +63,8 @@ Please see links below for more information:
 - [MIPS32 Instruction Set Quick Reference][MIPS32 QRC] from mips.com
 - [PIC32MX Interrutp handling][PIC32MX S11 INT]
 
+[Harmony Core Library]: https://microchip-mplab-harmony.github.io/core/GUID-C04D97AB-D6E0-4CF5-9A80-CA64E36B6199.html
+[System Timer Service]: https://microchip-mplab-harmony.github.io/core/GUID-9D474B7C-D749-4DD6-A012-FE94C039324E.html
 [TC74]: https://www.microchip.com/en-us/product/tc74
 [PIC32MX S11 INT]: http://ww1.microchip.com/downloads/en/DeviceDoc/61108B.pdf
 [MIPS32 M4K Manual]: https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00249-2B-M4K-SUM-02.03.pdf

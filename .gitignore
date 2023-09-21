@@ -1,6 +1,7 @@
 *~
 *.swp
 *.bmp
+*.bak*
 # MPLAB X IDE
 build/
 dist/
