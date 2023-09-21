@@ -11,7 +11,7 @@ Status: Just started
 
 * Using FRC = 8Mhz, with FRCPLL scaled to PBCLK = 48 MHz
 * MCC Harmony components:
-  * [Harmony Core Library][Harmony Core Library]
+  * [Harmony Core Library][Harmony Core Library] with state machine
   * [System Timer Service][System Timer Service]
     using tickless Core Timer (Core Timer
     is MIPS CPU feature). Tickless means that there is no fixed
@@ -19,13 +19,16 @@ Status: Just started
     one shot Timer as needed by consuming clients.
 * Peripherals CORE Timer
 * `RA0_LED` is blinking at 1s rate (500ms interrupt rate) using
-  `SYS_TIME` Service
+  [System Timer Service][System Timer Service]
 
 # Planned features:
 
-Use https://microchip-mplab-harmony.github.io/core/GUID-8916AA7D-64C7-4477-8D26-664F6B3C242A.html I2C Driver libray to
-control TC74 Temperature sensors.
+1. Use [Console System Service][Console System Service] and
+   `UART Console` and `UART PLIB` for Messages including
+   current temperature from sensor...
 
+2. Use [I2C Driver][I2C Driver] libray to
+   control TC74 Temperature sensors.
 
 # Required Hardware
 
@@ -39,6 +42,9 @@ control TC74 Temperature sensors.
   but there are some limitations).
 * 2 pull-up resistors 2 kOhm for SCA and SDL signals on I2C. Connected
   to VDD (3.3V on board).
+
+Required Wiring:
+- TODO
 
 # Software requirements
 
@@ -63,6 +69,8 @@ Please see links below for more information:
 - [MIPS32 Instruction Set Quick Reference][MIPS32 QRC] from mips.com
 - [PIC32MX Interrutp handling][PIC32MX S11 INT]
 
+[I2C Driver]: https://microchip-mplab-harmony.github.io/core/GUID-A420B807-5F28-4CED-9759-6E0F87209108.html
+[Console System Service]: https://microchip-mplab-harmony.github.io/core/GUID-177E8C6B-6F6F-4E94-9096-38134597D79A.html
 [Harmony Core Library]: https://microchip-mplab-harmony.github.io/core/GUID-C04D97AB-D6E0-4CF5-9A80-CA64E36B6199.html
 [System Timer Service]: https://microchip-mplab-harmony.github.io/core/GUID-9D474B7C-D749-4DD6-A012-FE94C039324E.html
 [TC74]: https://www.microchip.com/en-us/product/tc74
