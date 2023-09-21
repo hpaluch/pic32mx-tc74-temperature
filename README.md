@@ -51,6 +51,24 @@ Required Wiring:
 * [XC32 compiler][XC compilers] - tested version v4.30
 * [MPLAB X IDE][MPLAB X IDE] - tested version v6.15
 
+WARNING! Before opening this project you should inspect Manifest file
+[firmware/src/config/default/harmony-manifest-success.yml](firmware/src/config/default/harmony-manifest-success.yml)
+and ensure that your Harmony repository contains specified components and
+exactly same versions.
+
+- currently the only reliable way is to do this (I'm not kidding!):
+- create Empty MCC Harmony project and ensure that you specified
+  proper CPU [PIC32MX250F128B SPDIP][PIC32MX250F128B] 
+- when Wizard finishes it will automatically invoke MCC Content
+  Manager
+- you have to select `MCC Harmony` (the only available choice)
+- next you have to select exactly same components and
+  versions as listed in Manifest [firmware/src/config/default/harmony-manifest-success.yml](firmware/src/config/default/harmony-manifest-success.yml) 
+- once MCC finished Downloading and starts you can:
+- Close MCC
+- Close that empty project
+- Open this project - MCC should work without any complaint
+
 ## Software requirements
 
 * [XC32 compiler][XC compilers] - tested version v4.30
@@ -71,7 +89,7 @@ Please see links below for more information:
 
 [I2C Driver]: https://microchip-mplab-harmony.github.io/core/GUID-A420B807-5F28-4CED-9759-6E0F87209108.html
 [Console System Service]: https://microchip-mplab-harmony.github.io/core/GUID-177E8C6B-6F6F-4E94-9096-38134597D79A.html
-[Harmony Core Library]: https://microchip-mplab-harmony.github.io/core/GUID-C04D97AB-D6E0-4CF5-9A80-CA64E36B6199.html
+[Harmony Core Library]: https://microchip-mplab-harmony.github.io/core/
 [System Timer Service]: https://microchip-mplab-harmony.github.io/core/GUID-9D474B7C-D749-4DD6-A012-FE94C039324E.html
 [TC74]: https://www.microchip.com/en-us/product/tc74
 [PIC32MX S11 INT]: http://ww1.microchip.com/downloads/en/DeviceDoc/61108B.pdf
