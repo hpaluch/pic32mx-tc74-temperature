@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "configuration.h"
 #include "definitions.h"
 
@@ -59,10 +60,20 @@ extern "C" {
     determine the behavior of the application at various times.
 */
 
+// harmony-repo\core_apps_pic32mx\apps\driver\i2c\async\i2c_eeprom\firmware\src\app.h    
+typedef enum
+{
+    APP_TRANSFER_STATUS_IN_PROGRESS,
+    APP_TRANSFER_STATUS_SUCCESS,
+    APP_TRANSFER_STATUS_ERROR,
+    APP_TRANSFER_STATUS_IDLE,
+} APP_TRANSFER_STATUS;    
+    
 typedef enum
 {
     /* Application's state machine's initial state. */
     APP_STATE_INIT=0,
+    APP_STATE_INIT_I2C,
     APP_STATE_SERVICE_TASKS,
     APP_STATE_FATAL_ERROR
 } APP_STATES;
@@ -86,6 +97,12 @@ typedef struct
     /* The application's current state */
     APP_STATES state;
     SYS_TIME_HANDLE ledTimerHandle;
+    DRV_HANDLE drvI2CHandle;
+    DRV_I2C_TRANSFER_HANDLE transferHandle;
+    // modified from ISR, so must be volatile:
+    volatile APP_TRANSFER_STATUS transferStatus;
+    uint8_t dummyData;
+
 } APP_DATA;
 
 // *****************************************************************************

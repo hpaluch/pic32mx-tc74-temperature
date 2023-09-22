@@ -10,8 +10,10 @@
   Summary:
   Main Application logic.
   - Timer example follows:
-    https://microchip-mplab-harmony.github.io/core/GUID-EE734734-7914-41BF-8AF2-8275506BBED4.html
-
+    - https://microchip-mplab-harmony.github.io/core/GUID-EE734734-7914-41BF-8AF2-8275506BBED4.html
+  - I2C based on example:
+    - https://microchip-mplab-harmony.github.io/core/GUID-8916AA7D-64C7-4477-8D26-664F6B3C242A.html
+    - https://github.com/Microchip-MPLAB-Harmony/core_apps_pic32mx/tree/master/apps/driver/i2c/async/i2c_eeprom
   Description:
     This file contains the source code for the MPLAB Harmony application.  It
     implements the logic of the application's state machine and it may call
@@ -107,7 +109,10 @@ void APP_Initialize ( void )
     // NOTE: Only data should be initialized here, because it is called
     // very early from initialization.c !!!
     appData.state = APP_STATE_INIT;
-    appData.ledTimerHandle = SYS_TIME_HANDLE_INVALID;    
+    appData.ledTimerHandle = SYS_TIME_HANDLE_INVALID;
+    appData.drvI2CHandle = DRV_HANDLE_INVALID;
+    appData.transferHandle = DRV_I2C_TRANSFER_HANDLE_INVALID;
+    appData.transferStatus = APP_TRANSFER_STATUS_ERROR;
 }
 
 
@@ -132,7 +137,7 @@ void APP_Tasks ( void )
             APP_CONSOLE_PRINT("Starting app v%d.%02d",
                     APP_VERSION/100,APP_VERSION%100);
             if (APP_Init_LED_Timer()){
-                appData.state = APP_STATE_SERVICE_TASKS;
+                appData.state = APP_STATE_INIT_I2C;
             } else {
                 appData.state = APP_STATE_FATAL_ERROR;
                 APP_ERROR_PRINT("APP_Init_LED_Timer() failed.");
@@ -140,6 +145,21 @@ void APP_Tasks ( void )
             break;
         }
 
+        case APP_STATE_INIT_I2C:
+        {
+            APP_CONSOLE_PRINT("Before DRV_I2C_Open()");
+            appData.drvI2CHandle = DRV_I2C_Open(DRV_I2C_INDEX_0, DRV_IO_INTENT_READWRITE);
+            APP_CONSOLE_PRINT("After DRV_I2C_Open() handle=0x%" PRIxPTR,appData.drvI2CHandle);
+            if (appData.drvI2CHandle == DRV_HANDLE_INVALID){
+                APP_ERROR_PRINT("DRV_I2C_Open() failed.");
+                appData.state = APP_STATE_FATAL_ERROR;
+                goto exit_init_i2c;
+            }
+            appData.state = APP_STATE_SERVICE_TASKS;
+           exit_init_i2c:;
+        }
+            break;
+        
         case APP_STATE_SERVICE_TASKS:
         {
             // TODO: I2C init ....

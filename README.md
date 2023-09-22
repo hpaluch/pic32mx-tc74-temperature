@@ -21,10 +21,12 @@ Status: Just started
     Console output via UART2 PLIB
   * [Debug System Service][Debug System Service] - provides
     formatted debug messages API (like printf), requires Console
+  * [I2C Driver][I2C Driver] - wrapper around async. I2C PLIB
 * Peripherals CORE Timer
 * `RA0_LED` is blinking at 1s rate (500ms interrupt rate) using
   [System Timer Service][System Timer Service]
-* UART PLIB
+* UART2 PLIB
+* I2C1 PLIB
 
 # Planned features:
 
@@ -53,15 +55,24 @@ Microstick II Configurtion:
 - programming switch S1 in `A` position (where PINS 4 & 5 used for programming
   and debugging)
 
-Required Wiring:
-- TODO
+Required Wiring of Microstick II:
 
 | Microstick II Pin | Signal | Target | Detail |
 | ---: | --- | --- |
+| 17 | SCL1 | 2K pull-up | I2C1 clock |
+| 18 | SDA1 | 2K pull-up | I2C1 data |
 | 21 | U2TX | Console #954, White | UART2 TX (PIC Output, PC Input) |
 | 22 | U2RX | NC | UART2 RX (PIC Input, PC Output) - not connected |
 | 27 | GND | Console #954, Black | - |
 
+Required wiring for TC74 in 5-lead TO-220:
+
+| TC74 pin | Signal | Microstick II pin |
+| --: | --- | --- | ---: |
+| 2 | SDA | I2C data |  18 |
+| 3 | GND | Ground | 27 |
+| 4 | SCLK | I2C Clock | 17 |
+| 5 | VDD | +3.3V | "VDD" Test pin |
 
 # Software requirements
 
@@ -94,6 +105,14 @@ exactly same versions.
 
 # Resources
 
+This code is based on several Internet resources including:
+- Timer example:
+  - https://microchip-mplab-harmony.github.io/core/GUID-EE734734-7914-41BF-8AF2-8275506BBED4.html
+- I2C Driver based on example:
+  - https://microchip-mplab-harmony.github.io/core/GUID-8916AA7D-64C7-4477-8D26-664F6B3C242A.html
+  - https://github.com/Microchip-MPLAB-Harmony/core_apps_pic32mx/tree/master/apps/driver/i2c/async/i2c_eeprom
+
+
 PIC32MX is `MIPS32 M4K` based CPU Core with peripherals from Microchip.
 Please see links below for more information:
 - datasheet: [PIC32MX250F128B][PIC32MX250F128B]
@@ -104,7 +123,7 @@ Please see links below for more information:
 - [MIPS32 Instruction Set Quick Reference][MIPS32 QRC] from mips.com
 - [PIC32MX Interrutp handling][PIC32MX S11 INT]
 
-
+[I2C Driver]: https://microchip-mplab-harmony.github.io/core/GUID-4321CAFA-57B5-4633-9D43-0AE24B87C101.html
 [Debug System Service]: https://microchip-mplab-harmony.github.io/core/GUID-4F625306-2206-49B1-8846-60C97E40A440.html
 [Console System Service]: https://microchip-mplab-harmony.github.io/core/GUID-C8EFF72A-1BBB-416E-BF89-EEA2B23EB27D.html
 [I2C Driver]: https://microchip-mplab-harmony.github.io/core/GUID-A420B807-5F28-4CED-9759-6E0F87209108.html
