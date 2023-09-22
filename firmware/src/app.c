@@ -44,6 +44,7 @@ static const char *APP_FILE = "app.c";
 #define APP_CONSOLE_PRINT(fmt,...) SYS_CONSOLE_PRINT("%s:%d " fmt "\r\n", APP_FILE, __LINE__, ##__VA_ARGS__)
 // simple form  without any added content
 #define APP_CONSOLE_PRINT_RAW(fmt,...) SYS_CONSOLE_PRINT(fmt, ##__VA_ARGS__)
+#define APP_ERROR_PRINT(fmt,...) SYS_DEBUG_PRINT(SYS_ERROR_ERROR, "ERROR: %s:%d " fmt "\r\n", APP_FILE, __LINE__, ##__VA_ARGS__)
 // *****************************************************************************
 /* Application Data
 
@@ -134,6 +135,7 @@ void APP_Tasks ( void )
                 appData.state = APP_STATE_SERVICE_TASKS;
             } else {
                 appData.state = APP_STATE_FATAL_ERROR;
+                APP_ERROR_PRINT("APP_Init_LED_Timer() failed.");
             }
             break;
         }
