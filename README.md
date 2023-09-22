@@ -7,6 +7,31 @@ practice.
 
 Status: Just started
 
+> WARNING!
+>
+> Due Hardware bug in PIC32MX - see [PIC32MX Errata][PIC32MX Errata]. The RA0 (LED) and RA1
+> GPIO pins stop working when I2C1 module is enabled (!). Quoting:
+>
+> > Item 9:  
+> > 
+> > When I2C1 is enabled, all digital output-only functions and all analog 
+> > functions on pins RA0 and RA1 do not function correctly.
+> > 
+> > Digital output VOH/IOH does not meet the
+> > specification in the data sheet and analog signal
+> > input loading increases with an increase in applied
+> > voltage on any enabled analog function on RA0/RA1.
+> > If I2C1 is enabled, any analog or digital
+> > output-only function enabled on RA0/RA1 will also
+> > cause a corresponding 40 mA/pin increase in IDD.
+> >
+> > Workaround
+> >
+> > Disable slew rate control of the I2C1 module by
+> > setting the DISSLW bit (`I2C1CON<9>`) = 1.
+
+I will try workaround soon...
+
 # What is finished
 
 * Using FRC = 8Mhz, with FRCPLL scaled to PBCLK = 48 MHz
@@ -123,6 +148,7 @@ Please see links below for more information:
 - [MIPS32 Instruction Set Quick Reference][MIPS32 QRC] from mips.com
 - [PIC32MX Interrutp handling][PIC32MX S11 INT]
 
+[PIC32MX Errata]: https://ww1.microchip.com/downloads/aemDocuments/documents/MCU32/ProductDocuments/Errata/PIC32MX1XX-2XX-28-36-44-pin-Family-Errata-DS80000531Q.pdf
 [I2C Driver]: https://microchip-mplab-harmony.github.io/core/GUID-4321CAFA-57B5-4633-9D43-0AE24B87C101.html
 [Debug System Service]: https://microchip-mplab-harmony.github.io/core/GUID-4F625306-2206-49B1-8846-60C97E40A440.html
 [Console System Service]: https://microchip-mplab-harmony.github.io/core/GUID-C8EFF72A-1BBB-416E-BF89-EEA2B23EB27D.html

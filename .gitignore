@@ -9,3 +9,6 @@ dist/
 *.mk
 *.properties
 .generated_files/
+# debugger
+*.log
+*.log.inx
