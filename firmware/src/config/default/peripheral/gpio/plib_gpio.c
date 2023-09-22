@@ -64,12 +64,15 @@ void GPIO_Initialize ( void )
     ANSELACLR = 0x1; /* Digital Mode Enable */
 
     /* PORTB Initialization */
+    CNPUBSET = 0x800; /* Pull-Up Enable */
 
 
 
     /* PPS Input Remapping */
+    U2RXR = 3;
 
     /* PPS Output Remapping */
+    RPB10R = 2;
 
 
 }

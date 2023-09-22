@@ -1,24 +1,20 @@
 /*******************************************************************************
- System Interrupts File
+  Console System Service Local Data Structures
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    interrupt.c
+    sys_console_local.h
 
   Summary:
-    Interrupt vectors mapping
+    Console System Service local declarations and definitions.
 
   Description:
-    This file maps all the interrupt vectors to their corresponding
-    implementations. If a particular module interrupt is used, then its ISR
-    definition can be found in corresponding PLIB source file. If a module
-    interrupt is not used, then its ISR implementation is mapped to dummy
-    handler.
- *******************************************************************************/
+    This file contains the Console System Service local declarations and definitions.
+*******************************************************************************/
 
-// DOM-IGNORE-BEGIN
+//DOM-IGNORE-BEGIN
 /*******************************************************************************
 * Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
@@ -40,54 +36,47 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *******************************************************************************/
+*******************************************************************************/
+//DOM-IGNORE-END
+
+
+#ifndef SYS_CONSOLE_LOCAL_H
+#define SYS_CONSOLE_LOCAL_H
+
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: File includes
+// *****************************************************************************
+// *****************************************************************************
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus  // Provide C++ Compatibility
+
+extern "C" {
+
+#endif
 // DOM-IGNORE-END
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Included Files
-// *****************************************************************************
-// *****************************************************************************
-#include "configuration.h"
-#include "interrupts.h"
-#include "definitions.h"
-
-
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: System Interrupt Vector Functions
+// Section: Data Type Definitions
 // *****************************************************************************
 // *****************************************************************************
 
+typedef uintptr_t CONSOLE_DEVICE_INDEX;
 
-/* All the handlers are defined here.  Each will call its PLIB-specific function. */
-// *****************************************************************************
-// *****************************************************************************
-// Section: System Interrupt Vector declarations
-// *****************************************************************************
-// *****************************************************************************
-void CORE_TIMER_Handler (void);
-void UART_2_Handler (void);
-
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: System Interrupt Vector definitions
-// *****************************************************************************
-// *****************************************************************************
-void __ISR(_CORE_TIMER_VECTOR, ipl1SOFT) CORE_TIMER_Handler (void)
-{
-    CORE_TIMER_InterruptHandler();
+//DOM-IGNORE-BEGIN
+#ifdef __cplusplus
 }
+#endif
+//DOM-IGNORE-END
 
-void __ISR(_UART_2_VECTOR, ipl1SOFT) UART_2_Handler (void)
-{
-    UART_2_InterruptHandler();
-}
-
-
-
+#endif //#ifndef SYS_CONSOLE_LOCAL_H
 
 /*******************************************************************************
  End of File

@@ -1,32 +1,22 @@
 /*******************************************************************************
-  SYS CLK Static Functions for Clock System Service
+  Debug System Service Local Data Structures
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    plib_clk.c
+    sys_debug_local.h
 
   Summary:
-    SYS CLK static function implementations for the Clock System Service.
+    Debug System Service local declarations and definitions.
 
   Description:
-    The Clock System Service provides a simple interface to manage the
-    oscillators on Microchip microcontrollers. This file defines the static
-    implementation for the Clock System Service.
-
-  Remarks:
-    Static functions incorporate all system clock configuration settings as
-    determined by the user via the Microchip Harmony Configurator GUI.
-    It provides static version of the routines, eliminating the need for an
-    object ID or object handle.
-
-    Static single-open interfaces also eliminate the need for the open handle.
-
+    This file contains the Debug System Service local declarations and definitions.
 *******************************************************************************/
 
+//DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -47,58 +37,59 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
+//DOM-IGNORE-END
+
+#ifndef SYS_DEBUG_LOCAL_H
+#define SYS_DEBUG_LOCAL_H
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Include Files
+// Section: File includes
 // *****************************************************************************
 // *****************************************************************************
 
-#include "device.h"
-#include "plib_clk.h"
+#include "configuration.h"
+#include "driver/driver.h"
+
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus  // Provide C++ Compatibility
+
+    extern "C" {
+
+#endif
+// DOM-IGNORE-END
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: File Scope Functions
+// Section: Data Type Definitions
 // *****************************************************************************
 // *****************************************************************************
 
 // *****************************************************************************
-/* Function:
-    void CLK_Initialize( void )
+/* SYS DEBUG OBJECT INSTANCE structure
 
   Summary:
-    Initializes hardware and internal data structure of the System Clock.
+    System Debug object instance structure.
 
   Description:
-    This function initializes the hardware and internal data structure of System
-    Clock Service.
+    This data type defines the System Debug object instance.
 
   Remarks:
-    This is configuration values for the static version of the Clock System
-    Service module is determined by the user via the MHC GUI.
-
-    The objective is to eliminate the user's need to be knowledgeable in the
-    function of the 'configuration bits' to configure the system oscillators.
+    None.
 */
 
-void CLK_Initialize( void )
+typedef struct
 {
+    SYS_STATUS                        status;
+    SYS_MODULE_INDEX                  debugConsole;
+} SYS_DEBUG_INSTANCE;
 
-    /* Code for fuse settings can be found in "initialization.c" */
+//DOM-IGNORE-BEGIN
+#ifdef __cplusplus
 
+    }
 
-    /* Wait for PLL to be locked */
-    while(OSCCONbits.SLOCK == 0U)
-                 {
-                      /* Nothing to do */
-                 }
+#endif
+//DOM-IGNORE-END
 
-    /* Peripheral Module Disable Configuration */
-    PMD1 = 0x1101U;
-    PMD2 = 0x7U;
-    PMD3 = 0x1f001fU;
-    PMD4 = 0x1fU;
-    PMD5 = 0x1030301U;
-    PMD6 = 0x10001U;
-}
+#endif //#ifndef SYS_DEBUG_LOCAL_H

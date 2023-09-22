@@ -6,6 +6,10 @@
                    projectFiles="true">
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
+          <logicalFolder name="driver" displayName="driver" projectFiles="true">
+            <itemPath>../src/config/default/driver/driver_common.h</itemPath>
+            <itemPath>../src/config/default/driver/driver.h</itemPath>
+          </logicalFolder>
           <logicalFolder name="osal" displayName="osal" projectFiles="true">
             <itemPath>../src/config/default/osal/osal.h</itemPath>
             <itemPath>../src/config/default/osal/osal_definitions.h</itemPath>
@@ -24,10 +28,21 @@
             <logicalFolder name="gpio" displayName="gpio" projectFiles="true">
               <itemPath>../src/config/default/peripheral/gpio/plib_gpio.h</itemPath>
             </logicalFolder>
+            <logicalFolder name="uart" displayName="uart" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/uart/plib_uart_common.h</itemPath>
+              <itemPath>../src/config/default/peripheral/uart/plib_uart2.h</itemPath>
+            </logicalFolder>
           </logicalFolder>
           <logicalFolder name="system" displayName="system" projectFiles="true">
+            <logicalFolder name="console" displayName="console" projectFiles="true">
+              <itemPath>../src/config/default/system/console/sys_console.h</itemPath>
+              <itemPath>../src/config/default/system/console/src/sys_console_uart.h</itemPath>
+              <itemPath>../src/config/default/system/console/src/sys_console_uart_definitions.h</itemPath>
+              <itemPath>../src/config/default/system/console/src/sys_console_local.h</itemPath>
+            </logicalFolder>
             <logicalFolder name="debug" displayName="debug" projectFiles="true">
               <itemPath>../src/config/default/system/debug/sys_debug.h</itemPath>
+              <itemPath>../src/config/default/system/debug/src/sys_debug_local.h</itemPath>
             </logicalFolder>
             <logicalFolder name="int" displayName="int" projectFiles="true">
               <itemPath>../src/config/default/system/int/sys_int.h</itemPath>
@@ -80,11 +95,21 @@
             <logicalFolder name="gpio" displayName="gpio" projectFiles="true">
               <itemPath>../src/config/default/peripheral/gpio/plib_gpio.c</itemPath>
             </logicalFolder>
+            <logicalFolder name="uart" displayName="uart" projectFiles="true">
+              <itemPath>../src/config/default/peripheral/uart/plib_uart2.c</itemPath>
+            </logicalFolder>
           </logicalFolder>
           <logicalFolder name="stdio" displayName="stdio" projectFiles="true">
             <itemPath>../src/config/default/stdio/xc32_monitor.c</itemPath>
           </logicalFolder>
           <logicalFolder name="system" displayName="system" projectFiles="true">
+            <logicalFolder name="console" displayName="console" projectFiles="true">
+              <itemPath>../src/config/default/system/console/src/sys_console_uart.c</itemPath>
+              <itemPath>../src/config/default/system/console/src/sys_console.c</itemPath>
+            </logicalFolder>
+            <logicalFolder name="debug" displayName="debug" projectFiles="true">
+              <itemPath>../src/config/default/system/debug/src/sys_debug.c</itemPath>
+            </logicalFolder>
             <logicalFolder name="int" displayName="int" projectFiles="true">
               <itemPath>../src/config/default/system/int/src/sys_int.c</itemPath>
             </logicalFolder>

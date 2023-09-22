@@ -1,32 +1,24 @@
 /*******************************************************************************
-  SYS CLK Static Functions for Clock System Service
+  Console System Service Local Data Structures
 
   Company:
     Microchip Technology Inc.
 
   File Name:
-    plib_clk.c
+    sys_console_uart.h
 
   Summary:
-    SYS CLK static function implementations for the Clock System Service.
+    Console System Service local declarations and definitions for UART I/O
+    device.
 
   Description:
-    The Clock System Service provides a simple interface to manage the
-    oscillators on Microchip microcontrollers. This file defines the static
-    implementation for the Clock System Service.
-
-  Remarks:
-    Static functions incorporate all system clock configuration settings as
-    determined by the user via the Microchip Harmony Configurator GUI.
-    It provides static version of the routines, eliminating the need for an
-    object ID or object handle.
-
-    Static single-open interfaces also eliminate the need for the open handle.
-
+    This file contains the Console System Service local declarations and
+    definitions for UART I/O device.
 *******************************************************************************/
 
+//DOM-IGNORE-BEGIN
 /*******************************************************************************
-* Copyright (C) 2019 Microchip Technology Inc. and its subsidiaries.
+* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
 * Subject to your compliance with these terms, you may use Microchip software
 * and any derivatives exclusively with Microchip products. It is your
@@ -47,58 +39,64 @@
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
+//DOM-IGNORE-END
+
+#ifndef SYS_CONSOLE_UART_H
+#define SYS_CONSOLE_UART_H
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Include Files
+// Section: File includes
 // *****************************************************************************
 // *****************************************************************************
 
-#include "device.h"
-#include "plib_clk.h"
+#include "sys_console_local.h"
+#include "osal/osal.h"
+#include "system/console/src/sys_console_uart_definitions.h"
+
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus  // Provide C++ Compatibility
+
+    extern "C" {
+
+#endif
+// DOM-IGNORE-END
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: File Scope Functions
+// Section: Data Type Definitions
 // *****************************************************************************
 // *****************************************************************************
 
-// *****************************************************************************
-/* Function:
-    void CLK_Initialize( void )
-
-  Summary:
-    Initializes hardware and internal data structure of the System Clock.
-
-  Description:
-    This function initializes the hardware and internal data structure of System
-    Clock Service.
-
-  Remarks:
-    This is configuration values for the static version of the Clock System
-    Service module is determined by the user via the MHC GUI.
-
-    The objective is to eliminate the user's need to be knowledgeable in the
-    function of the 'configuration bits' to configure the system oscillators.
-*/
-
-void CLK_Initialize( void )
+typedef struct
 {
+    /* Pointer to USART APIs used by the console system service*/
+    const SYS_CONSOLE_UART_PLIB_INTERFACE* uartPLIB;
 
-    /* Code for fuse settings can be found in "initialization.c" */
+    SYS_CONSOLE_STATUS status;
 
+    /* Mutex to protect access to the transfer objects */
+    OSAL_MUTEX_DECLARE(mutexTransferObjects);
 
-    /* Wait for PLL to be locked */
-    while(OSCCONbits.SLOCK == 0U)
-                 {
-                      /* Nothing to do */
-                 }
+} CONSOLE_UART_DATA;
 
-    /* Peripheral Module Disable Configuration */
-    PMD1 = 0x1101U;
-    PMD2 = 0x7U;
-    PMD3 = 0x1f001fU;
-    PMD4 = 0x1fU;
-    PMD5 = 0x1030301U;
-    PMD6 = 0x10001U;
-}
+void Console_UART_Initialize(uint32_t index, const void* initData);
+SYS_CONSOLE_STATUS Console_UART_Status(uint32_t index);
+void Console_UART_Tasks(uint32_t index, SYS_MODULE_OBJ object);
+ssize_t Console_UART_Read(uint32_t index, void* pRdBuffer, size_t count);
+ssize_t Console_UART_ReadCountGet(uint32_t index);
+ssize_t Console_UART_ReadFreeBufferCountGet(uint32_t index);
+ssize_t Console_UART_Write(uint32_t index, const void* pWrBuffer, size_t count );
+ssize_t Console_UART_WriteFreeBufferCountGet(uint32_t index);
+ssize_t Console_UART_WriteCountGet(uint32_t index);
+bool Console_UART_Flush(uint32_t index);
+
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus
+
+    }
+
+#endif
+// DOM-IGNORE-END
+
+#endif //#ifndef SYS_CONSOLE_UART_H

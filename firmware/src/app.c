@@ -36,8 +36,14 @@
 // Section: Global Data Definitions
 // *****************************************************************************
 // *****************************************************************************
+#define APP_VERSION 100 // 123 = 1.23
 #define LED_BLINK_RATE_MS         500
-
+// short version of __FILE__ without path
+static const char *APP_FILE = "app.c";
+// improved macro that will print file and line of message
+#define APP_CONSOLE_PRINT(fmt,...) SYS_CONSOLE_PRINT("%s:%d " fmt "\r\n", APP_FILE, __LINE__, ##__VA_ARGS__)
+// simple form  without any added content
+#define APP_CONSOLE_PRINT00(fmt,...) SYS_CONSOLE_PRINT(fmt, ##__VA_ARGS__)
 // *****************************************************************************
 /* Application Data
 
@@ -121,6 +127,9 @@ void APP_Tasks ( void )
         /* Application's initial state. */
         case APP_STATE_INIT:
         {
+            APP_CONSOLE_PRINT("\r\n");
+            APP_CONSOLE_PRINT("Starting app v%d.%02d",
+                    APP_VERSION/100,APP_VERSION%100);
             if (APP_Init_LED_Timer()){
                 appData.state = APP_STATE_SERVICE_TASKS;
             } else {

@@ -17,9 +17,14 @@ Status: Just started
     is MIPS CPU feature). Tickless means that there is no fixed
     interrupt rate as time base, but `SYS_TIME` schedules
     one shot Timer as needed by consuming clients.
+  * [Console System Service][Console System Service] - provides
+    Console output via UART2 PLIB
+  * [Debug System Service][Debug System Service] - provides
+    formatted debug messages API (like printf), requires Console
 * Peripherals CORE Timer
 * `RA0_LED` is blinking at 1s rate (500ms interrupt rate) using
   [System Timer Service][System Timer Service]
+* UART PLIB
 
 # Planned features:
 
@@ -38,13 +43,25 @@ Status: Just started
 * [TC74 I2C Temperature sensor][TC74] recommended 
   "5-lead TO-220" package.
 * [USB Console Cable #954][cable954] - or any other usable USB to UART adapter.
-  Recommended 3.3V TTL version (PIC32MX has UART pins 5V tolerant
-  but there are some limitations).
+  WARNING! To ensure 3.3V compatibility with PIC, connect only Input (White)
+  and Ground (Black). Keep Output (Green) not connected!
 * 2 pull-up resistors 2 kOhm for SCA and SDL signals on I2C. Connected
   to VDD (3.3V on board).
 
+Microstick II Configurtion:
+- closed LED Jumper J3 (so LED is connected to PIN2 RA0
+- programming switch S1 in `A` position (where PINS 4 & 5 used for programming
+  and debugging)
+
 Required Wiring:
 - TODO
+
+| Microstick II Pin | Signal | Target | Detail |
+| ---: | --- | --- |
+| 21 | U2TX | Console #954, White | UART2 TX (PIC Output, PC Input) |
+| 22 | U2RX | NC | UART2 RX (PIC Input, PC Output) - not connected |
+| 27 | GND | Console #954, Black | - |
+
 
 # Software requirements
 
@@ -87,6 +104,9 @@ Please see links below for more information:
 - [MIPS32 Instruction Set Quick Reference][MIPS32 QRC] from mips.com
 - [PIC32MX Interrutp handling][PIC32MX S11 INT]
 
+
+[Debug System Service]: https://microchip-mplab-harmony.github.io/core/GUID-4F625306-2206-49B1-8846-60C97E40A440.html
+[Console System Service]: https://microchip-mplab-harmony.github.io/core/GUID-C8EFF72A-1BBB-416E-BF89-EEA2B23EB27D.html
 [I2C Driver]: https://microchip-mplab-harmony.github.io/core/GUID-A420B807-5F28-4CED-9759-6E0F87209108.html
 [Console System Service]: https://microchip-mplab-harmony.github.io/core/GUID-177E8C6B-6F6F-4E94-9096-38134597D79A.html
 [Harmony Core Library]: https://microchip-mplab-harmony.github.io/core/
