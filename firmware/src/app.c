@@ -54,6 +54,7 @@
 #define APP_TC74_CONFIG_STANDBY_MASK 0x80
 #define APP_TC74_CONFIG_READY_MASK 0x40
 #define APP_TC74_CONFIG_ZERO_MASK 0x3f
+#define APP_TC74_CONFIG_STATUS_MASK (APP_TC74_CONFIG_STANDBY_MASK|APP_TC74_CONFIG_READY_MASK)
 // short version of __FILE__ without path
 static const char *APP_FILE = "app.c";
 // improved macro that will print file and line of message
@@ -168,6 +169,7 @@ void APP_Initialize ( void )
     appData.rxData[0] = 0;
     appData.txData[0] = 0;
     appData.txData[1] = 0;
+    appData.iter = 0;
 }
 
 /******************************************************************************
@@ -276,9 +278,13 @@ void APP_Tasks ( void )
                         "Invalid CONFIG=0x%x LSB bits==0x%x - should be 0. Is target device TC74?",
                         cfg, cfg & APP_TC74_CONFIG_ZERO_MASK);
                 }
-                // TODO: validate CONFIG, change target state
-                // base on CONFIG -> Power Up, Ready...
-                appData.state = APP_STATE_SERVICE_TASKS;
+                if ( (cfg & APP_TC74_CONFIG_STATUS_MASK) == APP_TC74_CONFIG_READY_MASK ){
+                    appData.state = APP_STATE_I2C_QUERY_TEMP;
+                } else {
+                    // TODO: validate CONFIG, change target state
+                    // base on CONFIG -> Power Up, Ready...
+                    appData.state = APP_STATE_SERVICE_TASKS;
+                }
             } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
                 APP_ERROR_PRINT_AND_JUMP(I2cQueryConfigReadErrorJump,
                         "I2C Read CONFIG from ADDR=0x%x failed. Is target device TC74? i2cEvent=%d",
@@ -290,6 +296,42 @@ void APP_Tasks ( void )
         }
         break;
 
+        case APP_STATE_I2C_QUERY_TEMP:
+        {
+            // select and query TEMPERATURE register to get current temperature
+            appData.txData[0] = APP_TC74_REG_TEMP; // register we want to select
+            appData.rxData[0] = 0; // clean read buffer
+            appData.transferStatus = APP_TRANSFER_STATUS_IDLE;
+            APP_CHECK_ERROR_VOID(appData.transferHandle,
+                DRV_I2C_WriteReadTransferAdd(appData.drvI2CHandle, APP_TC74_SLAVE_ADDR,
+                    appData.txData, 1, appData.rxData, 1,&appData.transferHandle),
+                DRV_I2C_TRANSFER_HANDLE_INVALID, I2cQueryTempErrorJump);
+            appData.state = APP_STATE_I2C_QUERY_TEMP_READ;
+            I2cQueryTempErrorJump:;
+        }
+        break;
+
+        case APP_STATE_I2C_QUERY_TEMP_READ:
+        {
+            // test if CONFIG register was read without error
+            if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
+                // temperature is signed !
+                int8_t temp = (int8_t)appData.rxData[0];
+                appData.iter++;
+                APP_CONSOLE_PRINT("#%u Temp=%d Celsius (raw=0x%X)",
+                        appData.iter, temp, appData.rxData[0]);
+                // TODO: Wait and try again
+                appData.state = APP_STATE_SERVICE_TASKS;
+            } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
+                APP_ERROR_PRINT_AND_JUMP(I2cQueryTempReadErrorJump,
+                        "I2C Read TEMP from ADDR=0x%x failed. Is target device TC74? i2cEvent=%d",
+                        APP_TC74_SLAVE_ADDR, appData.i2cEvent);
+            } else {
+                // other states: transfer in progress, do nothing...
+            }
+            I2cQueryTempReadErrorJump:;
+        }
+        break;
         
         case APP_STATE_SERVICE_TASKS:
         {

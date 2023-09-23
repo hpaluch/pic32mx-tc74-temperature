@@ -6,8 +6,9 @@ temperature and print it on UART. I plan to fully utilize
 practice.
 
 Status:
+- reads and prints temperature - currently only once and
+  only when device is Up and Ready.
 - detailed error reports on UART console
-- tests if I2C device TC74 is present on Bus.
 
 Before running this program you nedd to define proper I2C address
 of your TC74 sensor in app.c. You have to read your package name:

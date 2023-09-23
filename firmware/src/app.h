@@ -77,6 +77,8 @@ typedef enum
     APP_STATE_I2C_TEST_READ,
     APP_STATE_I2C_QUERY_CONFIG,
     APP_STATE_I2C_QUERY_CONFIG_READ,
+    APP_STATE_I2C_QUERY_TEMP,
+    APP_STATE_I2C_QUERY_TEMP_READ,
     APP_STATE_SERVICE_TASKS,
     APP_STATE_FATAL_ERROR=9999
 } APP_STATES;
@@ -109,6 +111,7 @@ typedef struct
     volatile APP_TRANSFER_STATUS transferStatus;
     uint8_t rxData[1]; // we always read only 1 byte
     uint8_t txData[2]; // we always write 2 bytes - 1. Register, 2. Value
+    uint32_t iter; // measurement iteration
 } APP_DATA;
 
 // *****************************************************************************
