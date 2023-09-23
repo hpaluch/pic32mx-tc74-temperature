@@ -9,8 +9,9 @@ Status: Just started
 
 > WARNING!
 >
-> Due Hardware bug in PIC32MX - see [PIC32MX Errata][PIC32MX Errata]. The RA0 (LED) and RA1
-> GPIO pins stop working when I2C1 module is enabled (!). Quoting:
+> Due Hardware bug in PIC32MX - see [PIC32MX Errata][PIC32MX Errata].
+> The RA0 (LED) and RA1 GPIO pins stop working when I2C1 module
+> is enabled (!). Quoting:
 >
 > > Item 9:  
 > > 
@@ -30,7 +31,8 @@ Status: Just started
 > > Disable slew rate control of the I2C1 module by
 > > setting the DISSLW bit (`I2C1CON<9>`) = 1.
 
-I will try workaround soon...
+My PIC32MX250F128B is revision A1 - affected
+Applied Errata in MCC and RA0 LED works again...
 
 # What is finished
 
@@ -72,8 +74,8 @@ I will try workaround soon...
 * [USB Console Cable #954][cable954] - or any other usable USB to UART adapter.
   WARNING! To ensure 3.3V compatibility with PIC, connect only Input (White)
   and Ground (Black). Keep Output (Green) not connected!
-* 2 pull-up resistors 2 kOhm for SCA and SDL signals on I2C. Connected
-  to VDD (3.3V on board).
+* 2 pull-up resistors around 2k2 kOhm for SCA and SDL signals on I2C. Connected
+  to VDD (3.3V test point on board).
 
 Microstick II Configurtion:
 - closed LED Jumper J3 (so LED is connected to PIN2 RA0

@@ -38,7 +38,7 @@
 // Section: Global Data Definitions
 // *****************************************************************************
 // *****************************************************************************
-#define APP_VERSION 101 // 123 = 1.23
+#define APP_VERSION 102 // 123 = 1.23
 #define LED_BLINK_RATE_MS         500
 // short version of __FILE__ without path
 static const char *APP_FILE = "app.c";
