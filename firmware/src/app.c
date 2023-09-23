@@ -38,7 +38,7 @@
 // Section: Global Data Definitions
 // *****************************************************************************
 // *****************************************************************************
-#define APP_VERSION 102 // 123 = 1.23
+#define APP_VERSION 103 // 123 = 1.23
 #define LED_BLINK_RATE_MS         500
 // TC74 I2C Address - WARNING! You have to read it from package and
 // use proper address. My is TC74A0
@@ -324,7 +324,15 @@ void APP_Tasks ( void )
         
         case APP_STATE_I2C_BUSY_TC74:
         {
-            APP_ERROR_PRINT_AND_STATE("TODO: TC74 Busy Wait not yet implemented.");
+            SYS_TIME_RESULT res;
+            // maximum busy time should be 250ms, we will wait 300ms and try again
+            APP_CHECK_ERROR_NEQ(res,
+                        SYS_TIME_DelayUS(300000, &appData.pauseTimer),
+                        SYS_TIME_SUCCESS,I2cBusyErrorJump);
+            
+            appData.state = APP_STATE_PAUSE_AFTER_TEMP;
+            APP_CONSOLE_PRINT("TC74 busy: waiting 300ms before retry.");
+            I2cBusyErrorJump:;
         }
         break;
         
