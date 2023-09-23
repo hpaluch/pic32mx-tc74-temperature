@@ -9,6 +9,27 @@ Status:
 - detailed error reports on UART console
 - tests if I2C device TC74 is present on Bus.
 
+Before running this program you nedd to define proper I2C address
+of your TC74 sensor in app.c. You have to read your package name:
+- in my case it is `TC74A0`
+- where A0 means that I2C address is `0x48`
+- it is also default address in `firmware/src/app.c`:
+
+```c
+#define APP_TC74_SLAVE_ADDR_A0 0x48
+#define APP_TC74_SLAVE_ADDR_A5 0x4D
+#define APP_TC74_SLAVE_ADDR APP_TC74_SLAVE_ADDR_A0
+```
+
+So if your TC74 has suffix different from `A0` you need to look
+into [TC74 datasheet][TC74] and `#define` proper I2C address.
+Otherwise there will be error message on UART like this:
+
+```
+ERROR: app.c:232 I2C Read from ADDR=0x4d failed. Is TC74 connected? i2cEvent=-1
+ERROR: app.c:259 SYSTEM HALTED due error. appState=9999
+```
+
 > WARNING!
 >
 > Due Hardware bug in PIC32MX - see [PIC32MX Errata][PIC32MX Errata].

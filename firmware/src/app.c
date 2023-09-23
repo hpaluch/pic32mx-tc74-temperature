@@ -40,8 +40,13 @@
 // *****************************************************************************
 #define APP_VERSION 102 // 123 = 1.23
 #define LED_BLINK_RATE_MS         500
+// TC74 I2C Address - WARNING! You have to read it from package and
+// use proper address. My is TC74A0
+// Where A0 according to datasheet is 0x48
 // I2C defines 0b 1001 101 => 0100 1101
-#define APP_TC74_SLAVE_ADDR 0x4D
+#define APP_TC74_SLAVE_ADDR_A0 0x48
+#define APP_TC74_SLAVE_ADDR_A5 0x4D
+#define APP_TC74_SLAVE_ADDR APP_TC74_SLAVE_ADDR_A0
 // short version of __FILE__ without path
 static const char *APP_FILE = "app.c";
 // improved macro that will print file and line of message
