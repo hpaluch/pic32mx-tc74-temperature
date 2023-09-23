@@ -5,7 +5,9 @@ temperature and print it on UART. I plan to fully utilize
 `MCC Harmony` libraries and framework to learn how to use them in
 practice.
 
-Status: Just started
+Status:
+- detailed error reports on UART console
+- tests if I2C device TC74 is present on Bus.
 
 > WARNING!
 >

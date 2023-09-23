@@ -40,6 +40,8 @@
 // *****************************************************************************
 #define APP_VERSION 102 // 123 = 1.23
 #define LED_BLINK_RATE_MS         500
+// I2C defines 0b 1001 101 => 0100 1101
+#define APP_TC74_SLAVE_ADDR 0x4D
 // short version of __FILE__ without path
 static const char *APP_FILE = "app.c";
 // improved macro that will print file and line of message
@@ -47,6 +49,29 @@ static const char *APP_FILE = "app.c";
 // simple form  without any added content
 #define APP_CONSOLE_PRINT_RAW(fmt,...) SYS_CONSOLE_PRINT(fmt, ##__VA_ARGS__)
 #define APP_ERROR_PRINT(fmt,...) SYS_DEBUG_PRINT(SYS_ERROR_ERROR, "ERROR: %s:%d " fmt "\r\n", APP_FILE, __LINE__, ##__VA_ARGS__)
+
+#define APP_ERROR_PRINT_AND_JUMP(lab,fmt,...) \
+    do{ APP_ERROR_PRINT(fmt, ##__VA_ARGS__); \
+        appData.state = APP_STATE_FATAL_ERROR; \
+        goto lab; \
+    }while(0)
+// assigns result of function "fn" to "ret" and reports
+// and change state to error if "ret" == "err"
+#define APP_CHECK_ERROR(ret,fn,err,lab) \
+    if ( ((ret) = (fn)) == err  ){ \
+        APP_ERROR_PRINT("%s failed with %s. appState=%d",#fn,#err,appData.state);  \
+        appData.state = APP_STATE_FATAL_ERROR; \
+        goto lab; \
+    }
+// variant where function returns void and we have to check other variable
+#define APP_CHECK_ERROR_VOID(ret,fn,err,lab) \
+    (fn); \
+    if ( (ret) == err  ){ \
+        APP_ERROR_PRINT("%s failed with %s. appState=%d",#fn,#err,appData.state);  \
+        appData.state = APP_STATE_FATAL_ERROR; \
+        goto lab; \
+    }
+
 // *****************************************************************************
 /* Application Data
 
@@ -77,18 +102,32 @@ void Timer1_Callback ( uintptr_t context )
     }
 }
 
+// from harmony-repo\core_apps_pic32mx\apps\driver\i2c\async\i2c_eeprom\firmware\src\app.c
+void APP_I2CEventHandler (
+    DRV_I2C_TRANSFER_EVENT event,
+    DRV_I2C_TRANSFER_HANDLE transferHandle,
+    uintptr_t context
+)
+{
+    APP_TRANSFER_STATUS* transferStatus = (APP_TRANSFER_STATUS*)context;
+
+    appData.i2cEvent = event;
+    if (event == DRV_I2C_TRANSFER_EVENT_COMPLETE){
+        if (transferStatus){
+            *transferStatus = APP_TRANSFER_STATUS_SUCCESS;
+        }
+    } else {
+        if (transferStatus){
+            *transferStatus = APP_TRANSFER_STATUS_ERROR;
+        }
+    }
+}
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Local Functions
 // *****************************************************************************
 // *****************************************************************************
-
-// returns true on success
-bool APP_Init_LED_Timer(void){    
-    appData.ledTimerHandle = SYS_TIME_CallbackRegisterMS(Timer1_Callback,
-            0, LED_BLINK_RATE_MS, SYS_TIME_PERIODIC);
-    return appData.ledTimerHandle != SYS_TIME_HANDLE_INVALID;    
-}
 
 // *****************************************************************************
 // *****************************************************************************
@@ -107,14 +146,17 @@ bool APP_Init_LED_Timer(void){
 void APP_Initialize ( void )
 {
     // NOTE: Only data should be initialized here, because it is called
-    // very early from initialization.c !!!
+    // very early from initialization.c!
+    // Do not attempt to call API from here!
     appData.state = APP_STATE_INIT;
     appData.ledTimerHandle = SYS_TIME_HANDLE_INVALID;
     appData.drvI2CHandle = DRV_HANDLE_INVALID;
     appData.transferHandle = DRV_I2C_TRANSFER_HANDLE_INVALID;
     appData.transferStatus = APP_TRANSFER_STATUS_ERROR;
+    appData.rxData[0] = 0;
+    appData.txData[0] = 0;
+    appData.txData[1] = 0;
 }
-
 
 /******************************************************************************
   Function:
@@ -126,7 +168,6 @@ void APP_Initialize ( void )
 
 void APP_Tasks ( void )
 {
-
     /* Check the application's current state. */
     switch ( appData.state )
     {
@@ -136,43 +177,87 @@ void APP_Tasks ( void )
             APP_CONSOLE_PRINT_RAW("\r\n");
             APP_CONSOLE_PRINT("Starting app v%d.%02d",
                     APP_VERSION/100,APP_VERSION%100);
-            if (APP_Init_LED_Timer()){
-                appData.state = APP_STATE_INIT_I2C;
-            } else {
-                appData.state = APP_STATE_FATAL_ERROR;
-                APP_ERROR_PRINT("APP_Init_LED_Timer() failed.");
-            }
-            break;
+            
+            APP_CHECK_ERROR(appData.ledTimerHandle,
+                    SYS_TIME_CallbackRegisterMS(Timer1_Callback,
+                        0, LED_BLINK_RATE_MS, SYS_TIME_PERIODIC),
+                    SYS_TIME_HANDLE_INVALID,InitErrorJump);
+            
+            appData.state = APP_STATE_INIT_I2C;
+            // here jumps APP_CHECK_ERROR() macro in case of error:
+            InitErrorJump:;
         }
+        break;
 
         case APP_STATE_INIT_I2C:
         {
             APP_CONSOLE_PRINT("Before DRV_I2C_Open()");
-            appData.drvI2CHandle = DRV_I2C_Open(DRV_I2C_INDEX_0, DRV_IO_INTENT_READWRITE);
-            APP_CONSOLE_PRINT("After DRV_I2C_Open() handle=0x%" PRIxPTR,appData.drvI2CHandle);
-            if (appData.drvI2CHandle == DRV_HANDLE_INVALID){
-                APP_ERROR_PRINT("DRV_I2C_Open() failed.");
-                appData.state = APP_STATE_FATAL_ERROR;
-                goto exit_init_i2c;
-            }
-            appData.state = APP_STATE_SERVICE_TASKS;
-           exit_init_i2c:;
+            
+            APP_CHECK_ERROR(appData.drvI2CHandle,
+                    DRV_I2C_Open(DRV_I2C_INDEX_0, DRV_IO_INTENT_READWRITE),
+                    DRV_HANDLE_INVALID, InitI2cErrorJump);
+            APP_CONSOLE_PRINT("OK: After DRV_I2C_Open() handle=0x%" PRIxPTR,
+                    appData.drvI2CHandle);
+            
+            appData.transferStatus = APP_TRANSFER_STATUS_IDLE;
+            /* Register the I2C Driver event Handler */
+            DRV_I2C_TransferEventHandlerSet(
+                appData.drvI2CHandle,
+                APP_I2CEventHandler,
+                (uintptr_t)&appData.transferStatus
+            );
+
+            APP_CHECK_ERROR_VOID(appData.transferHandle,
+                DRV_I2C_ReadTransferAdd(
+                    appData.drvI2CHandle, APP_TC74_SLAVE_ADDR,
+                    (void *)appData.rxData, 1, &appData.transferHandle),
+                DRV_I2C_TRANSFER_HANDLE_INVALID, InitI2cErrorJump);
+            appData.state = APP_STATE_I2C_TEST_READ;
+            // here jumps APP_CHECK_ERROR() macro in case of error:
+            InitI2cErrorJump:;
         }
-            break;
-        
+        break;
+
+        case APP_STATE_I2C_TEST_READ:
+        {
+            // test if any I2C device responds with TC74 slave address
+            // read should be non-destructive for all I2C devices.
+            if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
+                APP_CONSOLE_PRINT("OK: TC74 response from ADDR=0x%x. Data=0x%x",
+                        APP_TC74_SLAVE_ADDR, appData.rxData[0]);
+                appData.state = APP_STATE_SERVICE_TASKS;
+            } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
+                APP_ERROR_PRINT_AND_JUMP(I2cTestReadErrorJump,
+                        "I2C Read from ADDR=0x%x failed. Is TC74 connected? i2cEvent=%d",
+                        APP_TC74_SLAVE_ADDR, appData.i2cEvent);
+            } else {
+                // other states: transfer in progress, do nothing...
+            }
+            I2cTestReadErrorJump:;
+        }
+        break;
+            
         case APP_STATE_SERVICE_TASKS:
         {
-            // TODO: I2C init ....
+            static bool messagePrinted = false;
+            if (!messagePrinted){
+                messagePrinted=true;
+                APP_CONSOLE_PRINT("TODO: Implement state: APP_STATE_SERVICE_TASKS.");
+            }
             break;
         }
 
         /* TODO: implement your application state machine.*/
 
-
         /* Currently we use this to catch all errors. */
         default:
         {
+            static bool errorPrinted=false;
             RA0_LED_Set(); // LED on forever on error
+            if (!errorPrinted){
+                errorPrinted=true;
+                APP_ERROR_PRINT("SYSTEM HALTED due error. appState=%d",appData.state);
+            }
             break;
         }
     }

@@ -74,8 +74,9 @@ typedef enum
     /* Application's state machine's initial state. */
     APP_STATE_INIT=0,
     APP_STATE_INIT_I2C,
+    APP_STATE_I2C_TEST_READ,
     APP_STATE_SERVICE_TASKS,
-    APP_STATE_FATAL_ERROR
+    APP_STATE_FATAL_ERROR=9999
 } APP_STATES;
 
 
@@ -99,10 +100,13 @@ typedef struct
     SYS_TIME_HANDLE ledTimerHandle;
     DRV_HANDLE drvI2CHandle;
     DRV_I2C_TRANSFER_HANDLE transferHandle;
+    
+    // value set from ISR, so must be volatile
+    volatile DRV_I2C_TRANSFER_EVENT i2cEvent;
     // modified from ISR, so must be volatile:
     volatile APP_TRANSFER_STATUS transferStatus;
-    uint8_t dummyData;
-
+    uint8_t rxData[1]; // we always read only 1 byte
+    uint8_t txData[2]; // we always write 2 bytes - 1. Register, 2. Value
 } APP_DATA;
 
 // *****************************************************************************
