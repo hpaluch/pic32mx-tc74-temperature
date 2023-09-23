@@ -63,6 +63,12 @@ static const char *APP_FILE = "app.c";
 #define APP_CONSOLE_PRINT_RAW(fmt,...) SYS_CONSOLE_PRINT(fmt, ##__VA_ARGS__)
 #define APP_ERROR_PRINT(fmt,...) SYS_DEBUG_PRINT(SYS_ERROR_ERROR, "ERROR: %s:%d " fmt "\r\n", APP_FILE, __LINE__, ##__VA_ARGS__)
 
+#define APP_ERROR_PRINT_AND_STATE(fmt,...) \
+    do{ APP_ERROR_PRINT(fmt, ##__VA_ARGS__); \
+        appData.state = APP_STATE_FATAL_ERROR; \
+    }while(0)
+
+
 #define APP_ERROR_PRINT_AND_JUMP(lab,fmt,...) \
     do{ APP_ERROR_PRINT(fmt, ##__VA_ARGS__); \
         appData.state = APP_STATE_FATAL_ERROR; \
@@ -76,6 +82,15 @@ static const char *APP_FILE = "app.c";
         appData.state = APP_STATE_FATAL_ERROR; \
         goto lab; \
     }
+
+// fail with error when ret != ok
+#define APP_CHECK_ERROR_NEQ(ret,fn,ok,lab) \
+    if ( ((ret) = (fn)) != ok  ){ \
+        APP_ERROR_PRINT("%s failed with != %s. appState=%d",#fn,#ok,appData.state);  \
+        appData.state = APP_STATE_FATAL_ERROR; \
+        goto lab; \
+    }
+
 // variant where function returns void and we have to check other variable
 #define APP_CHECK_ERROR_VOID(ret,fn,err,lab) \
     (fn); \
@@ -164,6 +179,7 @@ void APP_Initialize ( void )
     appData.state = APP_STATE_INIT;
     appData.ledTimerHandle = SYS_TIME_HANDLE_INVALID;
     appData.drvI2CHandle = DRV_HANDLE_INVALID;
+    appData.pauseTimer = SYS_TIME_HANDLE_INVALID;
     appData.transferHandle = DRV_I2C_TRANSFER_HANDLE_INVALID;
     appData.transferStatus = APP_TRANSFER_STATUS_ERROR;
     appData.rxData[0] = 0;
@@ -280,10 +296,14 @@ void APP_Tasks ( void )
                 }
                 if ( (cfg & APP_TC74_CONFIG_STATUS_MASK) == APP_TC74_CONFIG_READY_MASK ){
                     appData.state = APP_STATE_I2C_QUERY_TEMP;
+                } else if (cfg & APP_TC74_CONFIG_STANDBY_MASK){
+                    appData.state = APP_STATE_I2C_WAKEUP_TC74;
+                } else if ((cfg & APP_TC74_CONFIG_READY_MASK)==0){
+                    appData.state = APP_STATE_I2C_BUSY_TC74;
                 } else {
-                    // TODO: validate CONFIG, change target state
-                    // base on CONFIG -> Power Up, Ready...
-                    appData.state = APP_STATE_SERVICE_TASKS;
+                    APP_ERROR_PRINT_AND_JUMP(I2cQueryConfigReadErrorJump,
+                        "Unexpected Config state=0x%x CONFIG=0x%x - INERNAL ERROR",
+                        cfg & APP_TC74_CONFIG_STATUS_MASK, cfg);
                 }
             } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
                 APP_ERROR_PRINT_AND_JUMP(I2cQueryConfigReadErrorJump,
@@ -296,6 +316,18 @@ void APP_Tasks ( void )
         }
         break;
 
+        case APP_STATE_I2C_WAKEUP_TC74:
+        {
+            APP_ERROR_PRINT_AND_STATE("TODO: TC74 Wake-Up not yet implemented.");
+        }
+        break;
+        
+        case APP_STATE_I2C_BUSY_TC74:
+        {
+            APP_ERROR_PRINT_AND_STATE("TODO: TC74 Busy Wait not yet implemented.");
+        }
+        break;
+        
         case APP_STATE_I2C_QUERY_TEMP:
         {
             // select and query TEMPERATURE register to get current temperature
@@ -315,13 +347,17 @@ void APP_Tasks ( void )
         {
             // test if CONFIG register was read without error
             if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
+                SYS_TIME_RESULT res;
                 // temperature is signed !
                 int8_t temp = (int8_t)appData.rxData[0];
                 appData.iter++;
                 APP_CONSOLE_PRINT("#%u Temp=%d Celsius (raw=0x%X)",
                         appData.iter, temp, appData.rxData[0]);
-                // TODO: Wait and try again
-                appData.state = APP_STATE_SERVICE_TASKS;
+                // Wait and measure again
+                APP_CHECK_ERROR_NEQ(res,
+                        SYS_TIME_DelayUS(2000000, &appData.pauseTimer),
+                        SYS_TIME_SUCCESS,I2cQueryTempReadErrorJump);
+                appData.state = APP_STATE_PAUSE_AFTER_TEMP;
             } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
                 APP_ERROR_PRINT_AND_JUMP(I2cQueryTempReadErrorJump,
                         "I2C Read TEMP from ADDR=0x%x failed. Is target device TC74? i2cEvent=%d",
@@ -332,6 +368,14 @@ void APP_Tasks ( void )
             I2cQueryTempReadErrorJump:;
         }
         break;
+
+        case APP_STATE_PAUSE_AFTER_TEMP:
+        {
+            if (SYS_TIME_DelayIsComplete(appData.pauseTimer)){
+                appData.state = APP_STATE_I2C_QUERY_CONFIG;
+            }
+        }
+        break;
         
         case APP_STATE_SERVICE_TASKS:
         {
@@ -340,8 +384,8 @@ void APP_Tasks ( void )
                 messagePrinted=true;
                 APP_CONSOLE_PRINT("TODO: Implement state: APP_STATE_SERVICE_TASKS.");
             }
-            break;
         }
+        break;
 
         /* TODO: implement your application state machine.*/
 

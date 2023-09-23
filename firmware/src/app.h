@@ -77,8 +77,11 @@ typedef enum
     APP_STATE_I2C_TEST_READ,
     APP_STATE_I2C_QUERY_CONFIG,
     APP_STATE_I2C_QUERY_CONFIG_READ,
+    APP_STATE_I2C_WAKEUP_TC74,
+    APP_STATE_I2C_BUSY_TC74,
     APP_STATE_I2C_QUERY_TEMP,
     APP_STATE_I2C_QUERY_TEMP_READ,
+    APP_STATE_PAUSE_AFTER_TEMP,
     APP_STATE_SERVICE_TASKS,
     APP_STATE_FATAL_ERROR=9999
 } APP_STATES;
@@ -104,7 +107,7 @@ typedef struct
     SYS_TIME_HANDLE ledTimerHandle;
     DRV_HANDLE drvI2CHandle;
     DRV_I2C_TRANSFER_HANDLE transferHandle;
-    
+    SYS_TIME_HANDLE pauseTimer;
     // value set from ISR, so must be volatile
     volatile DRV_I2C_TRANSFER_EVENT i2cEvent;
     // modified from ISR, so must be volatile:
