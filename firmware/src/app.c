@@ -47,6 +47,13 @@
 #define APP_TC74_SLAVE_ADDR_A0 0x48
 #define APP_TC74_SLAVE_ADDR_A5 0x4D
 #define APP_TC74_SLAVE_ADDR APP_TC74_SLAVE_ADDR_A0
+// TEMPerature register in TC74
+#define APP_TC74_REG_TEMP 0
+// CONFIG register in TC74
+#define APP_TC74_REG_CONFIG 1
+#define APP_TC74_CONFIG_STANDBY_MASK 0x80
+#define APP_TC74_CONFIG_READY_MASK 0x40
+#define APP_TC74_CONFIG_ZERO_MASK 0x3f
 // short version of __FILE__ without path
 static const char *APP_FILE = "app.c";
 // improved macro that will print file and line of message
@@ -196,13 +203,9 @@ void APP_Tasks ( void )
 
         case APP_STATE_INIT_I2C:
         {
-            APP_CONSOLE_PRINT("Before DRV_I2C_Open()");
-            
             APP_CHECK_ERROR(appData.drvI2CHandle,
                     DRV_I2C_Open(DRV_I2C_INDEX_0, DRV_IO_INTENT_READWRITE),
                     DRV_HANDLE_INVALID, InitI2cErrorJump);
-            APP_CONSOLE_PRINT("OK: After DRV_I2C_Open() handle=0x%" PRIxPTR,
-                    appData.drvI2CHandle);
             
             appData.transferStatus = APP_TRANSFER_STATUS_IDLE;
             /* Register the I2C Driver event Handler */
@@ -228,9 +231,9 @@ void APP_Tasks ( void )
             // test if any I2C device responds with TC74 slave address
             // read should be non-destructive for all I2C devices.
             if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
-                APP_CONSOLE_PRINT("OK: TC74 response from ADDR=0x%x. Data=0x%x",
+                APP_CONSOLE_PRINT("OK: I2C ACK response from dev at ADDR=0x%x. Data=0x%x",
                         APP_TC74_SLAVE_ADDR, appData.rxData[0]);
-                appData.state = APP_STATE_SERVICE_TASKS;
+                appData.state = APP_STATE_I2C_QUERY_CONFIG;
             } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
                 APP_ERROR_PRINT_AND_JUMP(I2cTestReadErrorJump,
                         "I2C Read from ADDR=0x%x failed. Is TC74 connected? i2cEvent=%d",
@@ -241,7 +244,53 @@ void APP_Tasks ( void )
             I2cTestReadErrorJump:;
         }
         break;
-            
+
+        case APP_STATE_I2C_QUERY_CONFIG:
+        {
+            // select and query CONFIG register to know if TC74 is Up and
+            // and Ready to read TEMPerature
+            appData.txData[0] = APP_TC74_REG_CONFIG; // register we want to select
+            appData.rxData[0] = 0; // clean read buffer
+            appData.transferStatus = APP_TRANSFER_STATUS_IDLE;
+            APP_CHECK_ERROR_VOID(appData.transferHandle,
+                DRV_I2C_WriteReadTransferAdd(appData.drvI2CHandle, APP_TC74_SLAVE_ADDR,
+                    appData.txData, 1, appData.rxData, 1,&appData.transferHandle),
+                DRV_I2C_TRANSFER_HANDLE_INVALID, I2cQueryConfigErrorJump);
+            appData.state = APP_STATE_I2C_QUERY_CONFIG_READ;
+            I2cQueryConfigErrorJump:;
+        }
+        break;
+
+        case APP_STATE_I2C_QUERY_CONFIG_READ:
+        {
+            // test if CONFIG register was read without error
+            if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
+                uint8_t cfg = appData.rxData[0];
+                APP_CONSOLE_PRINT("Data from TC74 at ADDR=0x%x: CONFIG=0x%x %s %s zero mask: 0x%x",
+                        APP_TC74_SLAVE_ADDR, cfg,
+                        cfg & APP_TC74_CONFIG_STANDBY_MASK ? "STANDBY" : "UP",
+                        cfg & APP_TC74_CONFIG_READY_MASK ? "READY" : "BUSY",
+                        cfg & APP_TC74_CONFIG_ZERO_MASK);
+                if (cfg & APP_TC74_CONFIG_ZERO_MASK){
+                APP_ERROR_PRINT_AND_JUMP(I2cQueryConfigReadErrorJump,
+                        "Invalid CONFIG=0x%x LSB bits==0x%x - should be 0. Is target device TC74?",
+                        cfg, cfg & APP_TC74_CONFIG_ZERO_MASK);
+                }
+                // TODO: validate CONFIG, change target state
+                // base on CONFIG -> Power Up, Ready...
+                appData.state = APP_STATE_SERVICE_TASKS;
+            } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
+                APP_ERROR_PRINT_AND_JUMP(I2cQueryConfigReadErrorJump,
+                        "I2C Read CONFIG from ADDR=0x%x failed. Is target device TC74? i2cEvent=%d",
+                        APP_TC74_SLAVE_ADDR, appData.i2cEvent);
+            } else {
+                // other states: transfer in progress, do nothing...
+            }
+            I2cQueryConfigReadErrorJump:;
+        }
+        break;
+
+        
         case APP_STATE_SERVICE_TASKS:
         {
             static bool messagePrinted = false;
