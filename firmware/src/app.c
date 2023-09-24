@@ -38,12 +38,12 @@
 // Section: Global Data Definitions
 // *****************************************************************************
 // *****************************************************************************
-#define APP_VERSION 103 // 123 = 1.23
+#define APP_VERSION 104 // 123 = 1.23
 #define LED_BLINK_RATE_MS         500
+#define APP_MINIMUM_PAUSE_US 1000
 // TC74 I2C Address - WARNING! You have to read it from package and
 // use proper address. My is TC74A0
 // Where A0 according to datasheet is 0x48
-// I2C defines 0b 1001 101 => 0100 1101
 #define APP_TC74_SLAVE_ADDR_A0 0x48
 #define APP_TC74_SLAVE_ADDR_A5 0x4D
 #define APP_TC74_SLAVE_ADDR APP_TC74_SLAVE_ADDR_A0
@@ -281,14 +281,18 @@ void APP_Tasks ( void )
 
         case APP_STATE_I2C_QUERY_CONFIG_READ:
         {
+            static uint8_t oldCfg = ~0;
             // test if CONFIG register was read without error
             if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
                 uint8_t cfg = appData.rxData[0];
-                APP_CONSOLE_PRINT("Data from TC74 at ADDR=0x%x: CONFIG=0x%x %s %s zero mask: 0x%x",
-                        APP_TC74_SLAVE_ADDR, cfg,
-                        cfg & APP_TC74_CONFIG_STANDBY_MASK ? "STANDBY" : "UP",
-                        cfg & APP_TC74_CONFIG_READY_MASK ? "READY" : "BUSY",
-                        cfg & APP_TC74_CONFIG_ZERO_MASK);
+                if (cfg != oldCfg){
+                    APP_CONSOLE_PRINT("Data from TC74 at ADDR=0x%x: CONFIG=0x%x %s %s zero mask: 0x%x",
+                            APP_TC74_SLAVE_ADDR, cfg,
+                            cfg & APP_TC74_CONFIG_STANDBY_MASK ? "STANDBY" : "UP",
+                            cfg & APP_TC74_CONFIG_READY_MASK ? "READY" : "BUSY",
+                            cfg & APP_TC74_CONFIG_ZERO_MASK);
+                    oldCfg = cfg;
+                }
                 if (cfg & APP_TC74_CONFIG_ZERO_MASK){
                 APP_ERROR_PRINT_AND_JUMP(I2cQueryConfigReadErrorJump,
                         "Invalid CONFIG=0x%x LSB bits==0x%x - should be 0. Is target device TC74?",
@@ -318,21 +322,41 @@ void APP_Tasks ( void )
 
         case APP_STATE_I2C_WAKEUP_TC74:
         {
-            APP_ERROR_PRINT_AND_STATE("TODO: TC74 Wake-Up not yet implemented.");
+            appData.txData[0] = APP_TC74_REG_CONFIG; // register we want to select
+            appData.txData[1] = 0; // clean SHUTDOWN bit;
+            appData.transferStatus = APP_TRANSFER_STATUS_IDLE;
+            APP_CHECK_ERROR_VOID(appData.transferHandle,
+                DRV_I2C_WriteTransferAdd(appData.drvI2CHandle, APP_TC74_SLAVE_ADDR,
+                    appData.txData, 2,&appData.transferHandle),
+                DRV_I2C_TRANSFER_HANDLE_INVALID, I2cWakeUpErrorJump);
+            appData.state = APP_STATE_I2C_WAKEUP_TC74_NEXT;
+            I2cWakeUpErrorJump:;
         }
         break;
-        
+
+        case APP_STATE_I2C_WAKEUP_TC74_NEXT:
+        {
+            if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
+                appData.pauseUs = 3000000;
+                appData.state = APP_STATE_PAUSE;
+                APP_CONSOLE_PRINT("TC74 Waking Up!: waiting 300ms before retry.");
+            } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
+                APP_ERROR_PRINT_AND_JUMP(I2cWakeUpNexErrorJump,
+                        "Writing CONFIG register at ADDR=0x%x failed. i2cEvent=%d",
+                        APP_TC74_SLAVE_ADDR, appData.i2cEvent);
+            } else {
+                // other states: transfer in progress, do nothing...
+            }
+            I2cWakeUpNexErrorJump:;
+        }
+        break;
+
         case APP_STATE_I2C_BUSY_TC74:
         {
-            SYS_TIME_RESULT res;
             // maximum busy time should be 250ms, we will wait 300ms and try again
-            APP_CHECK_ERROR_NEQ(res,
-                        SYS_TIME_DelayUS(300000, &appData.pauseTimer),
-                        SYS_TIME_SUCCESS,I2cBusyErrorJump);
-            
-            appData.state = APP_STATE_PAUSE_AFTER_TEMP;
+            appData.pauseUs = 3000000;
+            appData.state = APP_STATE_PAUSE;
             APP_CONSOLE_PRINT("TC74 busy: waiting 300ms before retry.");
-            I2cBusyErrorJump:;
         }
         break;
         
@@ -355,17 +379,14 @@ void APP_Tasks ( void )
         {
             // test if CONFIG register was read without error
             if(appData.transferStatus == APP_TRANSFER_STATUS_SUCCESS){
-                SYS_TIME_RESULT res;
                 // temperature is signed !
                 int8_t temp = (int8_t)appData.rxData[0];
                 appData.iter++;
                 APP_CONSOLE_PRINT("#%u Temp=%d Celsius (raw=0x%X)",
                         appData.iter, temp, appData.rxData[0]);
                 // Wait and measure again
-                APP_CHECK_ERROR_NEQ(res,
-                        SYS_TIME_DelayUS(2000000, &appData.pauseTimer),
-                        SYS_TIME_SUCCESS,I2cQueryTempReadErrorJump);
-                appData.state = APP_STATE_PAUSE_AFTER_TEMP;
+                appData.pauseUs = 2000000;
+                appData.state = APP_STATE_PAUSE;
             } else if (appData.transferStatus == APP_TRANSFER_STATUS_ERROR){
                 APP_ERROR_PRINT_AND_JUMP(I2cQueryTempReadErrorJump,
                         "I2C Read TEMP from ADDR=0x%x failed. Is target device TC74? i2cEvent=%d",
@@ -377,16 +398,33 @@ void APP_Tasks ( void )
         }
         break;
 
-        case APP_STATE_PAUSE_AFTER_TEMP:
+        case APP_STATE_PAUSE:
+        {
+            SYS_TIME_RESULT res;
+            if (appData.pauseUs < APP_MINIMUM_PAUSE_US){
+                APP_ERROR_PRINT_AND_JUMP(PauseErrorJump,
+                    "Invalid app.pauseUs=%u must be >= %u - INTERNAL ERROR",
+                    appData.pauseUs, APP_MINIMUM_PAUSE_US);
+            }
+            APP_CHECK_ERROR_NEQ(res,
+                SYS_TIME_DelayUS(appData.pauseUs, &appData.pauseTimer),
+                SYS_TIME_SUCCESS,I2cQueryTempReadErrorJump);
+            appData.state = APP_STATE_PAUSE_NEXT;
+            PauseErrorJump:;
+        }
+        break;
+        
+        case APP_STATE_PAUSE_NEXT:
         {
             if (SYS_TIME_DelayIsComplete(appData.pauseTimer)){
                 appData.state = APP_STATE_I2C_QUERY_CONFIG;
             }
         }
         break;
-        
+
         case APP_STATE_SERVICE_TASKS:
         {
+            // state Stub for prototype code
             static bool messagePrinted = false;
             if (!messagePrinted){
                 messagePrinted=true;

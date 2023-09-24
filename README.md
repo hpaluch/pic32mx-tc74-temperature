@@ -1,64 +1,60 @@
 # PIC32MX Temperature meter with TC74
 
-Here is my project that uses PIC32MX with TC74 to measure
-temperature and print it on UART. I plan to fully utilize
-`MCC Harmony` libraries and framework to learn how to use them in
-practice.
+Here is my project that uses PIC32MX with TC74 to measure temperature and print
+it on UART.  MCC Harmony asynchronous Components (Debug, Console, I2C and other
+services) are utilized in this project which is new experience for me.
 
 Status:
-- reads and prints temperature - currently only once and
-  only when device is Up and Ready.
-- detailed error reports on UART console
+- project finished as of Sep 24 2023
+- now I will polish documentation and fix bugs.
+- however "wake up" code and "Busy wait" code is untested (I never experienced
+  that state)
 
-Before running this program you nedd to define proper I2C address
-of your TC74 sensor in app.c. You have to read your package name:
-- in my case it is `TC74A0`
-- where A0 means that I2C address is `0x48`
-- it is also default address in `firmware/src/app.c`:
-
-```c
-#define APP_TC74_SLAVE_ADDR_A0 0x48
-#define APP_TC74_SLAVE_ADDR_A5 0x4D
-#define APP_TC74_SLAVE_ADDR APP_TC74_SLAVE_ADDR_A0
+When configured properly there should be UART output like this:
 ```
-
-So if your TC74 has suffix different from `A0` you need to look
-into [TC74 datasheet][TC74] and `#define` proper I2C address.
-Otherwise there will be error message on UART like this:
-
+app.c:209 Starting app v1.04
+app.c:253 OK: I2C ACK response from dev at ADDR=0x48. Data=0x1f
+app.c:293 Data from TC74 at ADDR=0x48: CONFIG=0x40 UP READY zero mask: 0x0
+app.c:386 #1 Temp=31 Celsius (raw=0x1F)
+app.c:386 #2 Temp=32 Celsius (raw=0x20)
+app.c:386 #3 Temp=33 Celsius (raw=0x21)
+app.c:386 #4 Temp=34 Celsius (raw=0x22)
+app.c:386 #5 Temp=34 Celsius (raw=0x22)
 ```
-ERROR: app.c:232 I2C Read from ADDR=0x4d failed. Is TC74 connected? i2cEvent=-1
-ERROR: app.c:259 SYSTEM HALTED due error. appState=9999
-```
+(I was holding finger on TC74 to quickly change temperature)
 
-> WARNING!
+
+> NOTE!
 >
-> Due Hardware bug in PIC32MX - see [PIC32MX Errata][PIC32MX Errata].
+> This project is hit by Hardware bug in PIC32MX Revision
+> A1 - see [PIC32MX Errata][PIC32MX Errata].
 > The RA0 (LED) and RA1 GPIO pins stop working when I2C1 module
-> is enabled (!). Quoting:
+> is enabled (!).
 >
-> > Item 9:  
-> > 
-> > When I2C1 is enabled, all digital output-only functions and all analog 
-> > functions on pins RA0 and RA1 do not function correctly.
-> > 
-> > Digital output VOH/IOH does not meet the
-> > specification in the data sheet and analog signal
-> > input loading increases with an increase in applied
-> > voltage on any enabled analog function on RA0/RA1.
-> > If I2C1 is enabled, any analog or digital
-> > output-only function enabled on RA0/RA1 will also
-> > cause a corresponding 40 mA/pin increase in IDD.
-> >
-> > Workaround
-> >
-> > Disable slew rate control of the I2C1 module by
-> > setting the DISSLW bit (`I2C1CON<9>`) = 1.
+> Fortunately recommended workaround is working well, summarized:
+> ```diff
+> diff --git a/firmware/src/config/default/peripheral/i2c/master/plib_i2c1_master.c b/firmware/src/config
+> /default/peripheral/i2c/master/plib_i2c1_master.c
+> index 89c42e7..e7f04cc 100644
+> --- a/firmware/src/config/default/peripheral/i2c/master/plib_i2c1_master.c
+> +++ b/firmware/src/config/default/peripheral/i2c/master/plib_i2c1_master.c
+> @@ -74,7 +74,7 @@ void I2C1_Initialize(void)
+>      I2C1BRG = 235;
+> 
+>      I2C1CONCLR = _I2C1CON_SIDL_MASK;
+> -    I2C1CONCLR = _I2C1CON_DISSLW_MASK;
+> +    I2C1CONSET = _I2C1CON_DISSLW_MASK;
+>      I2C1CONCLR = _I2C1CON_SMEN_MASK;
+> 
+>      /* Clear master interrupt flag */
+> ```
+>
+> See [Commit bdaf154](https://github.com/hpaluch/pic32mx-tc74-temperature/commit/bdaf15443f2f8d2f4590a2bca19931275af74e68) on GitHub for details.
 
-My PIC32MX250F128B is revision A1 - affected
-Applied Errata in MCC and RA0 LED works again...
+# Program details
 
-# What is finished
+This project uses MCC Harmony "Core" Components in Asynchronous mode
+(main polling thread - "cooperative multitasking") - e.g. RTOS = No.
 
 * Using FRC = 8Mhz, with FRCPLL scaled to PBCLK = 48 MHz
 * MCC Harmony components:
@@ -79,15 +75,6 @@ Applied Errata in MCC and RA0 LED works again...
 * UART2 PLIB
 * I2C1 PLIB
 
-# Planned features:
-
-1. Use [Console System Service][Console System Service] and
-   `UART Console` and `UART PLIB` for Messages including
-   current temperature from sensor...
-
-2. Use [I2C Driver][I2C Driver] libray to
-   control TC74 Temperature sensors.
-
 # Required Hardware
 
 * [Microstick II][PIC Microstick II] board
@@ -97,7 +84,8 @@ Applied Errata in MCC and RA0 LED works again...
   "5-lead TO-220" package.
 * [USB Console Cable #954][cable954] - or any other usable USB to UART adapter.
   WARNING! To ensure 3.3V compatibility with PIC, connect only Input (White)
-  and Ground (Black). Keep Output (Green) not connected!
+  and Ground (Black). Keep Output (Green) not connected to avoid 5V on 3.3V pin
+  (this USB Version of PIC32MX have pins 21,22 NOT 5V tolerant!)
 * 2 pull-up resistors around 2k2 kOhm for SCA and SDL signals on I2C. Connected
   to VDD (3.3V test point on board).
 
@@ -147,6 +135,28 @@ exactly same versions.
 - Close MCC
 - Close that empty project
 - Open this project - MCC should work without any complaint
+
+Before running this program you need to define proper I2C address
+of your TC74 sensor in app.c. You have to read your package name:
+- in my case it is `TC74A0`
+- where A0 means that I2C address is `0x48`
+- it is also default address in `firmware/src/app.c`:
+
+```c
+#define APP_TC74_SLAVE_ADDR_A0 0x48
+#define APP_TC74_SLAVE_ADDR_A5 0x4D
+#define APP_TC74_SLAVE_ADDR APP_TC74_SLAVE_ADDR_A0
+```
+
+So if your TC74 has suffix different from `A0` you need to look
+into [TC74 datasheet][TC74] and `#define` proper I2C address.
+Otherwise there will be error message on UART like this:
+
+```
+app.c:209 Starting app v1.03
+ERROR: app.c:258 I2C Read from ADDR=0x48 failed. Is TC74 connected? i2cEvent=-1
+ERROR: app.c:407 SYSTEM HALTED due error. appState=9999
+```
 
 ## Software requirements
 
