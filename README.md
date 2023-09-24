@@ -97,7 +97,7 @@ Microstick II Configurtion:
 Required Wiring of Microstick II:
 
 | Microstick II Pin | Signal | Target | Detail |
-| ---: | --- | --- |
+| ---: | --- | --- | --- |
 | 17 | SCL1 | 2K pull-up | I2C1 clock |
 | 18 | SDA1 | 2K pull-up | I2C1 data |
 | 21 | U2TX | Console #954, White | UART2 TX (PIC Output, PC Input) |
@@ -107,7 +107,7 @@ Required Wiring of Microstick II:
 Required wiring for TC74 in 5-lead TO-220:
 
 | TC74 pin | Signal | Microstick II pin |
-| --: | --- | --- | ---: |
+| ---: | --- | ---: |
 | 2 | SDA | I2C data |  18 |
 | 3 | GND | Ground | 27 |
 | 4 | SCLK | I2C Clock | 17 |
