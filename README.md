@@ -8,9 +8,9 @@ services) are utilized in this project which is new experience for me.
 
 Status:
 - project finished as of Sep 24 2023
-- now I will polish documentation and fix bugs.
 - however "wake up" code and "Busy wait" code is untested (I never experienced
   that state)
+- now I will polish documentation and fix bugs.
 
 When configured properly there should be UART output like this:
 ```
