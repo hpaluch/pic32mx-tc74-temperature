@@ -4,6 +4,8 @@ Here is my project that uses PIC32MX with TC74 to measure temperature and print
 it on UART.  MCC Harmony asynchronous Components (Debug, Console, I2C and other
 services) are utilized in this project which is new experience for me.
 
+![PIC32MX with TC74 Temp sensor](assets/pic32mx-tc74-breadboard.jpg)
+
 Status:
 - project finished as of Sep 24 2023
 - now I will polish documentation and fix bugs.
