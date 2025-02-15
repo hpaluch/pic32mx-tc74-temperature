@@ -117,8 +117,8 @@ Required wiring for TC74 in 5-lead TO-220:
 
 # Software requirements
 
-* [XC32 compiler][XC compilers] - tested version v4.30
-* [MPLAB X IDE][MPLAB X IDE] - tested version v6.15
+* [XC32 compiler][XC compilers] - tested version v4.50
+* [MPLAB X IDE][MPLAB X IDE] - tested version v6.20
 
 WARNING! Before opening this project you should inspect Manifest file
 [firmware/src/config/default/harmony-manifest-success.yml](firmware/src/config/default/harmony-manifest-success.yml)
