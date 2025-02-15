@@ -56,11 +56,11 @@
 #include "peripheral/evic/plib_evic.h"
 #include "system/console/sys_console.h"
 #include "system/console/src/sys_console_uart_definitions.h"
-#include "driver/i2c/drv_i2c.h"
-#include "system/time/sys_time.h"
 #include "system/int/sys_int.h"
 #include "osal/osal.h"
 #include "system/debug/sys_debug.h"
+#include "system/time/sys_time.h"
+#include "driver/i2c/drv_i2c.h"
 #include "app.h"
 
 

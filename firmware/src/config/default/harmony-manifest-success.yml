@@ -4,14 +4,14 @@
 
 
 project: pic32mx-tc74-temperature
-creation_date: 2023-09-23T14:30:29.532+02:00[Europe/Prague]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
-operating_system: Windows 10
+creation_date: 2025-02-15T17:41:03.462+01:00[Europe/Prague]    # ISO 8601 format: https://www.w3.org/TR/NOTE-datetime
+operating_system: Linux
 mcc_mode: IDE            # [IDE|Standalone|Headless]
-mcc_version: v5.3.7
-mcc_core_version: v5.5.7
-mplabx_version: v6.15        # if MPLAB X plugin only
+mcc_version: v5.5.1
+mcc_core_version: v5.7.1
+mplabx_version: v6.20        # if MPLAB X plugin only
 harmony_version: v1.3.2
-compiler: XC32 (v4.30) 
+compiler: XC32 4.50
 
 modules:
     - {name: "csp", version: "v3.18.0"}
